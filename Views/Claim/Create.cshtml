@@ -1,0 +1,115 @@
+﻿@model ContractMonthlyClaimSystem.Models.Claim
+@{
+    ViewData["Title"] = "Submit Claim";
+    var lecturer = ViewBag.Lecturer as ContractMonthlyClaimSystem.Models.Lecturer;
+}
+
+<h2>Submit New Claim</h2>
+
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-success">@TempData["Message"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+<form asp-action="Submit" method="post" enctype="multipart/form-data">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="LecturerId" />
+
+    <div class="mb-3">
+        <label asp-for="Month" class="form-label">Claim Month *</label>
+        <input asp-for="Month" class="form-control" placeholder="e.g. September 2025" required />
+    </div>
+
+    <h4>Claim Lines</h4>
+    <div id="claimLines">
+        <div class="claim-line row mb-3">
+            <div class="col-md-5">
+                <input name="ClaimLines[0].Description" class="form-control" placeholder="Description" required />
+            </div>
+            <div class="col-md-2">
+                <input name="ClaimLines[0].HoursWorked" type="number" step="0.1" class="form-control hours" required />
+            </div>
+            <div class="col-md-2">
+                <input name="ClaimLines[0].RatePerHour" type="number" step="0.01" class="form-control rate" value="@lecturer?.HourlyRate" required />
+            </div>
+            <div class="col-md-2">
+                <input type="text" class="form-control subtotal" readonly />
+            </div>
+            <div class="col-md-1">
+                <button type="button" class="btn btn-danger" onclick="removeLine(this)">Remove</button>
+            </div>
+        </div>
+    </div>
+
+    <button type="button" class="btn btn-secondary mb-3" onclick="addLine()">Add Another Line</button>
+
+    <h4>Supporting Documents</h4>
+    <input type="file" name="documents" multiple class="form-control" accept=".pdf,.docx,.xlsx,.jpg,.png" />
+    <small class="text-muted">Max size 5MB. Allowed types: PDF, DOCX, XLSX, JPG, PNG</small>
+
+    <div class="mt-3">
+        <button type="submit" class="btn btn-success">Submit Claim</button>
+        <a asp-controller="Claim" asp-action="LecturerDashboard" asp-route-lecturerId="@Model.LecturerId" class="btn btn-secondary">Cancel</a>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        let lineCount = 1;
+
+        function addLine() {
+            const container = document.getElementById('claimLines');
+            const div = document.createElement('div');
+            div.className = 'claim-line row mb-3';
+            div.innerHTML = `
+                <div class="col-md-5">
+                    <input name="ClaimLines[${lineCount}].Description" class="form-control" placeholder="Description" required />
+                </div>
+                <div class="col-md-2">
+                    <input name="ClaimLines[${lineCount}].HoursWorked" type="number" step="0.1" class="form-control hours" required />
+                </div>
+                <div class="col-md-2">
+                    <input name="ClaimLines[${lineCount}].RatePerHour" type="number" step="0.01" class="form-control rate" value="@lecturer?.HourlyRate" required />
+                </div>
+                <div class="col-md-2">
+                    <input type="text" class="form-control subtotal" readonly />
+                </div>
+                <div class="col-md-1">
+                    <button type="button" class="btn btn-danger" onclick="removeLine(this)">Remove</button>
+                </div>
+            `;
+            container.appendChild(div);
+            lineCount++;
+
+            const hours = div.querySelector('.hours');
+            const rate = div.querySelector('.rate');
+            hours.addEventListener('input', calculateSubtotal);
+            rate.addEventListener('input', calculateSubtotal);
+        }
+
+        function removeLine(btn) {
+            if(document.querySelectorAll('.claim-line').length > 1) btn.closest('.claim-line').remove();
+        }
+
+        function calculateSubtotal(e) {
+            const line = e.target.closest('.claim-line');
+            const hours = parseFloat(line.querySelector('.hours').value) || 0;
+            const rate = parseFloat(line.querySelector('.rate').value) || 0;
+            line.querySelector('.subtotal').value = (hours * rate).toFixed(2);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const hours = document.querySelector('.hours');
+            const rate = document.querySelector('.rate');
+            if(hours && rate) {
+                hours.addEventListener('input', calculateSubtotal);
+                rate.addEventListener('input', calculateSubtotal);
+                calculateSubtotal({ target: hours });
+            }
+        });
+    </script>
+}

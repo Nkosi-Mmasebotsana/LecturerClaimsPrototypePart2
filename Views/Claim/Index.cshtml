@@ -1,0 +1,38 @@
+﻿@model List<ContractMonthlyClaimSystem.Models.Claim>
+@{
+    ViewData["Title"] = "My Claims";
+}
+
+<h2>My Monthly Claims</h2>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Claim ID</th>
+            <th>Month</th>
+            <th>Total (R)</th>
+            <th>Status</th>
+            <th>Submitted</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var claim in Model)
+        {
+            <tr>
+                <td>@claim.ClaimId</td>
+                <td>@claim.Month</td>
+                <td>@string.Format("{0:N2}", claim.TotalAmount)</td>
+                <td>@claim.Status</td>
+                <td>@claim.SubmittedAt.ToString("yyyy-MM-dd")</td>
+                <td>
+                    <a asp-controller="Claim" asp-action="Details" asp-route-id="@claim.ClaimId" class="btn btn-sm btn-info">
+                        View Details
+                    </a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<a asp-controller="Claim" asp-action="Create" class="btn btn-primary">Submit New Claim</a>
