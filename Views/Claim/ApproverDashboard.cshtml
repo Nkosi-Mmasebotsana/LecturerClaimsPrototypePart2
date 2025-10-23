@@ -1,7 +1,7 @@
 ﻿@model List<ContractMonthlyClaimSystem.Models.Claim>
 @{
     ViewData["Title"] = "Approver Dashboard";
-    var role = ViewBag.Role as string;
+    var role = ViewBag.Role as string ?? "Approver";
 }
 
 <h2>@role Dashboard — Pending Claims</h2>
@@ -32,7 +32,7 @@ else
                     <th>Lecturer</th>
                     <th>Month</th>
                     <th>Total Hours</th>
-                    <th>Total Amount</th>
+                    <th>Total Amount (R)</th>
                     <th>Status</th>
                     <th>Submitted</th>
                     <th>Actions</th>
@@ -49,7 +49,7 @@ else
                         </td>
                         <td>@claim.Month</td>
                         <td>@claim.TotalHours.ToString("F1")</td>
-                        <td>R @claim.TotalAmount.ToString("N2")</td>
+                        <td>@claim.TotalAmount.ToString("N2")</td>
                         <td>
                             <span class="badge @(claim.Status == "Submitted" ? "bg-warning" : claim.Status == "Approved" ? "bg-success" : "bg-danger")">
                                 @claim.Status
@@ -57,19 +57,21 @@ else
                         </td>
                         <td>@claim.SubmittedAt.ToString("yyyy-MM-dd")</td>
                         <td>
-                            <a asp-controller="Claim" asp-action="Details" asp-route-id="@claim.ClaimId" class="btn btn-sm btn-info">View</a>
+                            <a asp-controller="Claim" asp-action="Details" asp-route-id="@claim.ClaimId" class="btn btn-sm btn-info mb-1">View</a>
+
                             <form asp-action="Approve" method="post" style="display:inline">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="id" value="@claim.ClaimId" />
                                 <input type="hidden" name="approverId" value="1" />
-                                <button type="submit" class="btn btn-sm btn-success">Approve</button>
+                                <button type="submit" class="btn btn-sm btn-success mb-1">Approve</button>
                             </form>
+
                             <form asp-action="Reject" method="post" style="display:inline">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="id" value="@claim.ClaimId" />
                                 <input type="hidden" name="approverId" value="1" />
                                 <input type="hidden" name="comment" value="Rejected by approver" />
-                                <button type="submit" class="btn btn-sm btn-danger">Reject</button>
+                                <button type="submit" class="btn btn-sm btn-danger mb-1">Reject</button>
                             </form>
                         </td>
                     </tr>
