@@ -92,7 +92,9 @@
         }
 
         function removeLine(btn) {
-            if(document.querySelectorAll('.claim-line').length > 1) btn.closest('.claim-line').remove();
+            if (document.querySelectorAll('.claim-line').length > 1) {
+                btn.closest('.claim-line').remove();
+            }
         }
 
         function calculateSubtotal(e) {
@@ -102,10 +104,10 @@
             line.querySelector('.subtotal').value = (hours * rate).toFixed(2);
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const hours = document.querySelector('.hours');
             const rate = document.querySelector('.rate');
-            if(hours && rate) {
+            if (hours && rate) {
                 hours.addEventListener('input', calculateSubtotal);
                 rate.addEventListener('input', calculateSubtotal);
                 calculateSubtotal({ target: hours });
