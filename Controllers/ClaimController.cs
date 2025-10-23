@@ -10,7 +10,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ContractMonthlyClaimSystem.Controllers
 {
-    // Keeps routes predictable: /Claim/ActionName
     [Route("[controller]/[action]")]
     public class ClaimController : Controller
     {
@@ -18,7 +17,7 @@ namespace ContractMonthlyClaimSystem.Controllers
         private const long MaxFileSize = 5 * 1024 * 1024; // 5MB
         private static readonly string[] AllowedExtensions = { ".pdf", ".docx", ".xlsx", ".jpg", ".png" };
 
-        // Static in-memory data
+        // In-memory data
         private static readonly List<Lecturer> Lecturers = new()
         {
             new Lecturer {LecturerId = 101, FullName = "Dr. Tumi N.", Email = "tumi@gmail.com", HourlyRate = 500 },
@@ -38,27 +37,22 @@ namespace ContractMonthlyClaimSystem.Controllers
             _environment = environment;
         }
 
-        // ---------- LECTURER ----------
+        // ---------- LECTURER DASHBOARD ----------
 
-        // Lecturer dashboard: lists claims for the given lecturer and link to create.
-        // URL: /Claim/LecturerDashboard?lecturerId=101
         [HttpGet]
         public IActionResult LecturerDashboard(int lecturerId = 101)
         {
             var lecturer = Lecturers.FirstOrDefault(l => l.LecturerId == lecturerId);
             if (lecturer == null) return NotFound();
 
-            var claims = Claims
-                .Where(c => c.LecturerId == lecturerId)
-                .OrderByDescending(c => c.SubmittedAt)
-                .ToList();
+            var claims = Claims.Where(c => c.LecturerId == lecturerId)
+                               .OrderByDescending(c => c.SubmittedAt)
+                               .ToList();
 
             ViewBag.Lecturer = lecturer;
             return View(claims);
         }
 
-        // Show form to create claim for a lecturer
-        // URL: /Claim/Create?lecturerId=101
         [HttpGet]
         public IActionResult Create(int lecturerId = 101)
         {
@@ -69,7 +63,6 @@ namespace ContractMonthlyClaimSystem.Controllers
             return View(new Claim { LecturerId = lecturerId, ClaimLines = new List<ClaimLine>() });
         }
 
-        // Submit claim (lecturer)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Submit(Claim claim, List<IFormFile> documents)
@@ -79,15 +72,12 @@ namespace ContractMonthlyClaimSystem.Controllers
                 var lecturer = Lecturers.FirstOrDefault(l => l.LecturerId == claim.LecturerId);
                 if (lecturer == null) return NotFound();
 
-                // Ensure claim lines exist
                 claim.ClaimLines ??= new List<ClaimLine>();
 
-                // Assign new ClaimId
                 claim.ClaimId = Claims.Any() ? Claims.Max(c => c.ClaimId) + 1 : 1;
                 claim.SubmittedAt = DateTime.Now;
                 claim.Status = "Submitted";
 
-                // Calculate totals and assign line ids
                 claim.TotalHours = 0;
                 claim.TotalAmount = 0;
                 for (int i = 0; i < claim.ClaimLines.Count; i++)
@@ -100,7 +90,6 @@ namespace ContractMonthlyClaimSystem.Controllers
                     claim.TotalAmount += line.Subtotal;
                 }
 
-                // Handle document uploads (saved to wwwroot/uploads)
                 claim.Documents = new List<SupportingDocument>();
                 if (documents != null && documents.Any())
                 {
@@ -121,10 +110,6 @@ namespace ContractMonthlyClaimSystem.Controllers
                                 UploadedAt = DateTime.Now
                             });
                         }
-                        else
-                        {
-                            // optional: collect upload failures, but continue
-                        }
                     }
                 }
 
@@ -139,10 +124,8 @@ namespace ContractMonthlyClaimSystem.Controllers
             }
         }
 
-        // ---------- APPROVER ----------
+        // ---------- APPROVER DASHBOARD ----------
 
-        // Approver dashboard: only pending/submitted claims
-        // URL: /Claim/ApproverDashboard
         [HttpGet]
         public IActionResult ApproverDashboard(string role = "Programme Coordinator")
         {
@@ -150,7 +133,6 @@ namespace ContractMonthlyClaimSystem.Controllers
                                       .OrderBy(c => c.SubmittedAt)
                                       .ToList();
 
-            // Attach lecturer info to each claim
             foreach (var claim in pendingClaims)
                 claim.Lecturer = Lecturers.FirstOrDefault(l => l.LecturerId == claim.LecturerId);
 
@@ -158,8 +140,6 @@ namespace ContractMonthlyClaimSystem.Controllers
             return View(pendingClaims);
         }
 
-        // Details (used by both lecturer and approver)
-        // URL: /Claim/Details/{id}
         [HttpGet("{id}")]
         public IActionResult Details(int id)
         {
@@ -167,11 +147,10 @@ namespace ContractMonthlyClaimSystem.Controllers
             if (claim == null) return NotFound();
 
             claim.Lecturer = Lecturers.FirstOrDefault(l => l.LecturerId == claim.LecturerId);
-            ViewBag.Users = Users; // for approver dropdown
+            ViewBag.Users = Users;
             return View(claim);
         }
 
-        // Approve action (approver)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Approve(int id, int approverId)
@@ -186,7 +165,6 @@ namespace ContractMonthlyClaimSystem.Controllers
             return RedirectToAction(nameof(ApproverDashboard));
         }
 
-        // Reject action (approver)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Reject(int id, int approverId, string comment)
@@ -208,7 +186,38 @@ namespace ContractMonthlyClaimSystem.Controllers
             return RedirectToAction(nameof(ApproverDashboard));
         }
 
-        // ------------ Helper -------------
+        // ---------- LECTURERS TAB ----------
+
+        [HttpGet]
+        public IActionResult LecturersList()  // renamed method
+        {
+            return View(Lecturers.OrderBy(l => l.LecturerId).ToList());
+        }
+
+        [HttpGet]
+        public IActionResult AddLecturer()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult AddLecturer(Lecturer lecturer)
+        {
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = "Please fill in all required fields.";
+                return View(lecturer);
+            }
+
+            lecturer.LecturerId = Lecturers.Any() ? Lecturers.Max(l => l.LecturerId) + 1 : 1;
+            Lecturers.Add(lecturer);
+
+            TempData["Message"] = $"Lecturer {lecturer.FullName} added successfully!";
+            return RedirectToAction(nameof(LecturersList)); // updated redirect
+        }
+
+        // ---------- HELPER ----------
         private async Task<(bool Success, string FileName, string FilePath)> HandleFileUpload(IFormFile file)
         {
             try

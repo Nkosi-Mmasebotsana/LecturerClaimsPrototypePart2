@@ -23,6 +23,10 @@
 {
     <div class="alert alert-success">@TempData["Message"]</div>
 }
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4>My Monthly Claims</h4>
@@ -60,18 +64,19 @@ else
                         <td>@claim.ClaimId</td>
                         <td>@claim.Month</td>
                         <td>@claim.TotalHours.ToString("F1")</td>
-                        <td>@claim.TotalAmount.ToString("N2")</td>
+                        <td>R @claim.TotalAmount.ToString("N2")</td>
                         <td>
                             <span class="badge @(claim.Status == "Submitted" ? "bg-warning" :
-                                                                                   claim.Status == "Approved" ? "bg-success" :
-                                                                                   claim.Status == "Rejected" ? "bg-danger" : "bg-secondary")">
+                                                                                    claim.Status == "Approved" ? "bg-success" :
+                                                                                    claim.Status == "Rejected" ? "bg-danger" : "bg-secondary")">
                         @claim.Status
                     </span>
                 </td>
                 <td>@claim.SubmittedAt.ToString("yyyy-MM-dd")</td>
                 <td>
-                    <a asp-controller="Claim" asp-action="Details" asp-route-id="@claim.ClaimId"
-                       class="btn btn-sm btn-info"><i class="fas fa-eye"></i> View</a>
+                    <a asp-controller="Claim" asp-action="Details" asp-route-id="@claim.ClaimId" class="btn btn-sm btn-info mb-1">
+                        <i class="fas fa-eye"></i> View
+                    </a>
                 </td>
             </tr>
                         }
