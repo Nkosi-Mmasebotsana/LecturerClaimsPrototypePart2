@@ -63,8 +63,8 @@ else
                         <td>@claim.TotalAmount.ToString("N2")</td>
                         <td>
                             <span class="badge @(claim.Status == "Submitted" ? "bg-warning" :
-                                                                                  claim.Status == "Approved" ? "bg-success" :
-                                                                                  claim.Status == "Rejected" ? "bg-danger" : "bg-secondary")">
+                                                                                   claim.Status == "Approved" ? "bg-success" :
+                                                                                   claim.Status == "Rejected" ? "bg-danger" : "bg-secondary")">
                         @claim.Status
                     </span>
                 </td>
