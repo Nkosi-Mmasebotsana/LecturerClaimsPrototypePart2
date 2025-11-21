@@ -2,6 +2,7 @@ using System;
 using ContractMonthlyClaimSystem.Data;
 using ContractMonthlyClaimSystem.Services;
 using Microsoft.EntityFrameworkCore;
+using ContractMonthlyClaimSystem.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +12,17 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<IClaimService, ClaimService>();
+builder.Services.AddScoped<IAuthService, AuthService>(); // Add this line
+
+// Add session support
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
+builder.Services.AddHttpContextAccessor(); // Add this for session access
 
 var app = builder.Build();
 
@@ -18,11 +30,11 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.EnsureCreated(); // UNCOMMENTED - This creates DB and tables without migrations
+    db.Database.EnsureCreated(); // This creates DB and tables without migrations
     Console.WriteLine("Database and tables created successfully!");
 }
 
-// Rest of your existing pipeline
+// Configure pipeline
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -32,6 +44,10 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
+
+app.UseSession(); // Add this before authorization
+app.UseMiddleware<AuthMiddleware>(); // Add custom auth middleware
+
 app.UseAuthorization();
 
 app.MapControllerRoute(
