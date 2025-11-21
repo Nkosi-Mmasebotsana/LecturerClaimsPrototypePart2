@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ContractMonthlyClaimSystem.Models;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+using ContractMonthlyClaimSystem.Data;
 
 namespace ContractMonthlyClaimSystem.Controllers
 {
@@ -14,53 +9,47 @@ namespace ContractMonthlyClaimSystem.Controllers
     public class ClaimController : Controller
     {
         private readonly IWebHostEnvironment _environment;
-        private const long MaxFileSize = 5 * 1024 * 1024; // 5MB
+        private readonly AppDbContext _context;
+
+        private const long MaxFileSize = 5 * 1024 * 1024;
         private static readonly string[] AllowedExtensions = { ".pdf", ".docx", ".xlsx", ".jpg", ".png" };
 
-        // In-memory data
-        private static readonly List<Lecturer> Lecturers = new()
-        {
-            new Lecturer {LecturerId = 101, FullName = "Dr. Tumi N.", Email = "tumi@gmail.com", HourlyRate = 500 },
-            new Lecturer {LecturerId = 102, FullName = "Mrs. Kgosi S.", Email = "kgosi@yahoo.com", HourlyRate = 400 }
-        };
-
-        private static readonly List<User> Users = new()
-        {
-            new User {UserId = 1, FullName = "Kholo Nkosi", Role = "Programme Coordinator" },
-            new User {UserId = 2, FullName = "Siya Sepuru", Role = "Academic Manager" }
-        };
-
-        private static readonly List<Claim> Claims = new();
-
-        public ClaimController(IWebHostEnvironment environment)
+        public ClaimController(IWebHostEnvironment environment, AppDbContext context)
         {
             _environment = environment;
+            _context = context;
         }
 
-        // ---------- LECTURER DASHBOARD ----------
-
+        // --- LECTURER DASHBOARD ---
         [HttpGet]
-        public IActionResult LecturerDashboard(int lecturerId = 101)
+        public async Task<IActionResult> LecturerDashboard(int lecturerId = 1)
         {
-            var lecturer = Lecturers.FirstOrDefault(l => l.LecturerId == lecturerId);
+            var lecturer = await _context.Lecturers.FindAsync(lecturerId);
             if (lecturer == null) return NotFound();
 
-            var claims = Claims.Where(c => c.LecturerId == lecturerId)
-                               .OrderByDescending(c => c.SubmittedAt)
-                               .ToList();
+            var claims = await _context.Claims
+                .Include(c => c.ClaimLines)
+                .Include(c => c.Documents)
+                .Where(c => c.LecturerId == lecturerId)
+                .OrderByDescending(c => c.SubmittedAt)
+                .ToListAsync();
 
             ViewBag.Lecturer = lecturer;
             return View(claims);
         }
 
         [HttpGet]
-        public IActionResult Create(int lecturerId = 101)
+        public async Task<IActionResult> Create(int lecturerId = 1)
         {
-            var lecturer = Lecturers.FirstOrDefault(l => l.LecturerId == lecturerId);
+            var lecturer = await _context.Lecturers.FindAsync(lecturerId);
             if (lecturer == null) return NotFound();
 
             ViewBag.Lecturer = lecturer;
-            return View(new Claim { LecturerId = lecturerId, ClaimLines = new List<ClaimLine>() });
+            return View(new Claim
+            {
+                LecturerId = lecturerId,
+                ClaimLines = new List<ClaimLine>()
+            });
         }
 
         [HttpPost]
@@ -69,27 +58,28 @@ namespace ContractMonthlyClaimSystem.Controllers
         {
             try
             {
-                var lecturer = Lecturers.FirstOrDefault(l => l.LecturerId == claim.LecturerId);
+                var lecturer = await _context.Lecturers.FindAsync(claim.LecturerId);
                 if (lecturer == null) return NotFound();
 
                 claim.ClaimLines ??= new List<ClaimLine>();
 
-                claim.ClaimId = Claims.Any() ? Claims.Max(c => c.ClaimId) + 1 : 1;
+                // Set claim properties
                 claim.SubmittedAt = DateTime.Now;
                 claim.Status = "Submitted";
-
                 claim.TotalHours = 0;
                 claim.TotalAmount = 0;
+
+                // Calculate line items
                 for (int i = 0; i < claim.ClaimLines.Count; i++)
                 {
                     var line = claim.ClaimLines[i];
                     line.ClaimLineId = i + 1;
-                    line.ClaimId = claim.ClaimId;
                     line.Subtotal = line.HoursWorked * line.RatePerHour;
                     claim.TotalHours += line.HoursWorked;
                     claim.TotalAmount += line.Subtotal;
                 }
 
+                // Handle file uploads
                 claim.Documents = new List<SupportingDocument>();
                 if (documents != null && documents.Any())
                 {
@@ -97,12 +87,11 @@ namespace ContractMonthlyClaimSystem.Controllers
                     {
                         if (file.Length <= 0) continue;
                         var result = await HandleFileUpload(file);
+
                         if (result.Success)
                         {
                             claim.Documents.Add(new SupportingDocument
                             {
-                                DocumentId = claim.Documents.Count + 1,
-                                ClaimId = claim.ClaimId,
                                 FileName = result.FileName,
                                 FilePath = result.FilePath,
                                 FileSize = file.Length,
@@ -113,7 +102,10 @@ namespace ContractMonthlyClaimSystem.Controllers
                     }
                 }
 
-                Claims.Add(claim);
+                // Save to database
+                _context.Claims.Add(claim);
+                await _context.SaveChangesAsync();
+
                 TempData["Message"] = "Claim submitted successfully!";
                 return RedirectToAction(nameof(LecturerDashboard), new { lecturerId = claim.LecturerId });
             }
@@ -124,52 +116,59 @@ namespace ContractMonthlyClaimSystem.Controllers
             }
         }
 
-        // ---------- APPROVER DASHBOARD ----------
-
+        // --- APPROVER DASHBOARD ---
         [HttpGet]
-        public IActionResult ApproverDashboard(string role = "Programme Coordinator")
+        public async Task<IActionResult> ApproverDashboard(string role = "Programme Coordinator")
         {
-            var pendingClaims = Claims.Where(c => c.Status == "Submitted")
-                                      .OrderBy(c => c.SubmittedAt)
-                                      .ToList();
-
-            foreach (var claim in pendingClaims)
-                claim.Lecturer = Lecturers.FirstOrDefault(l => l.LecturerId == claim.LecturerId);
+            var pendingClaims = await _context.Claims
+                .Include(c => c.Lecturer)
+                .Include(c => c.ClaimLines)
+                .Where(c => c.Status == "Submitted")
+                .OrderBy(c => c.SubmittedAt)
+                .ToListAsync();
 
             ViewBag.Role = role;
+            ViewBag.Users = await _context.Users.ToListAsync();
             return View(pendingClaims);
         }
 
         [HttpGet("{id}")]
-        public IActionResult Details(int id)
+        public async Task<IActionResult> Details(int id)
         {
-            var claim = Claims.FirstOrDefault(c => c.ClaimId == id);
+            var claim = await _context.Claims
+                .Include(c => c.Lecturer)
+                .Include(c => c.ClaimLines)
+                .Include(c => c.Documents)
+                .FirstOrDefaultAsync(c => c.ClaimId == id);
+
             if (claim == null) return NotFound();
 
-            claim.Lecturer = Lecturers.FirstOrDefault(l => l.LecturerId == claim.LecturerId);
-            ViewBag.Users = Users;
+            ViewBag.Users = await _context.Users.ToListAsync();
             return View(claim);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Approve(int id, int approverId)
+        public async Task<IActionResult> Approve(int id, int approverId)
         {
-            var claim = Claims.FirstOrDefault(c => c.ClaimId == id);
+            var claim = await _context.Claims.FindAsync(id);
             if (claim == null) return NotFound();
 
             claim.Status = "Approved";
             claim.ApprovedBy = approverId;
             claim.ApprovedAt = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+
             TempData["Message"] = $"Claim #{id} approved!";
             return RedirectToAction(nameof(ApproverDashboard));
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Reject(int id, int approverId, string comment)
+        public async Task<IActionResult> Reject(int id, int approverId, string comment)
         {
-            var claim = Claims.FirstOrDefault(c => c.ClaimId == id);
+            var claim = await _context.Claims.FindAsync(id);
             if (claim == null) return NotFound();
 
             if (string.IsNullOrWhiteSpace(comment))
@@ -182,16 +181,19 @@ namespace ContractMonthlyClaimSystem.Controllers
             claim.RejectedBy = approverId;
             claim.RejectedAt = DateTime.Now;
             claim.RejectionComment = comment;
+
+            await _context.SaveChangesAsync();
+
             TempData["Message"] = $"Claim #{id} rejected!";
             return RedirectToAction(nameof(ApproverDashboard));
         }
 
-        // ---------- LECTURERS TAB ----------
-
+        // --- LECTURERS TAB ---
         [HttpGet]
-        public IActionResult LecturersList()  // renamed method
+        public async Task<IActionResult> LecturersList()
         {
-            return View(Lecturers.OrderBy(l => l.LecturerId).ToList());
+            var lecturers = await _context.Lecturers.OrderBy(l => l.LecturerId).ToListAsync();
+            return View(lecturers);
         }
 
         [HttpGet]
@@ -202,7 +204,7 @@ namespace ContractMonthlyClaimSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult AddLecturer(Lecturer lecturer)
+        public async Task<IActionResult> AddLecturer(Lecturer lecturer)
         {
             if (!ModelState.IsValid)
             {
@@ -210,20 +212,20 @@ namespace ContractMonthlyClaimSystem.Controllers
                 return View(lecturer);
             }
 
-            lecturer.LecturerId = Lecturers.Any() ? Lecturers.Max(l => l.LecturerId) + 1 : 1;
-            Lecturers.Add(lecturer);
+            // Auto-generate LecturerId if needed, or let database handle it
+            _context.Lecturers.Add(lecturer);
+            await _context.SaveChangesAsync();
 
             TempData["Message"] = $"Lecturer {lecturer.FullName} added successfully!";
-            return RedirectToAction(nameof(LecturersList)); // updated redirect
+            return RedirectToAction(nameof(LecturersList));
         }
 
-        // ---------- HELPER ----------
+        // --- HELPER ---
         private async Task<(bool Success, string FileName, string FilePath)> HandleFileUpload(IFormFile file)
         {
             try
             {
                 if (file.Length > MaxFileSize) return (false, "", "");
-
                 var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
                 if (!AllowedExtensions.Contains(ext)) return (false, "", "");
 

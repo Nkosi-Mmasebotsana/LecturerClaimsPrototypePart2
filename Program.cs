@@ -1,27 +1,35 @@
+using System;
+using ContractMonthlyClaimSystem.Data;
 using ContractMonthlyClaimSystem.Services;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Simple database setup - NO Identity for now
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
 builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<IClaimService, ClaimService>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Create database on startup - NO migrations
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.EnsureCreated(); // This creates DB and tables without migrations
+}
+
+// Rest of your existing pipeline
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
-else
-{
-    app.UseDeveloperExceptionPage();
-}
 
 app.UseHttpsRedirection();
-app.UseStaticFiles(); // This enables serving uploaded files from wwwroot
-
+app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthorization();
 
