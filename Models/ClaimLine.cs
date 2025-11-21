@@ -1,24 +1,34 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ContractMonthlyClaimSystem.Models
 {
     public class ClaimLine
     {
+        [Key]
         public int ClaimLineId { get; set; }
+
+        [Required]
         public int ClaimId { get; set; }
 
-        [Required(ErrorMessage = "Description is required")]
-        [StringLength(200, ErrorMessage = "Description cannot exceed 200 characters")]
-        public string Description { get; set; } = "";
+        [Required]
+        [StringLength(200)]
+        public string Description { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Hours worked is required")]
-        [Range(0.1, 1000, ErrorMessage = "Hours must be between 0.1 and 1000")]
+        [Required]
+        [Range(0.1, 1000)]
+        [Column(TypeName = "decimal(18,2)")]
         public decimal HoursWorked { get; set; }
 
-        [Required(ErrorMessage = "Rate per hour is required")]
-        [Range(1, 10000, ErrorMessage = "Rate must be between 1 and 10000")]
+        [Required]
+        [Range(1, 10000)]
+        [Column(TypeName = "decimal(18,2)")]
         public decimal RatePerHour { get; set; }
 
+        [Column(TypeName = "decimal(18,2)")]
         public decimal Subtotal { get; set; }
+
+        [ForeignKey("ClaimId")]
+        public virtual Claim Claim { get; set; } = null!;
     }
 }
