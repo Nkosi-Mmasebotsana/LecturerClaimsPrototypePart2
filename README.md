@@ -1,80 +1,115 @@
-# Contract Monthly Claim System (CMCS) — Part 1  
+# Contract Monthly Claim System (CMCS) — Part 2 
 
-GitHub Repository link: https://github.com/Nkosi-Mmasebotsana/CMCS-Prototype 
+GitHub Repository link: https://github.com/Nkosi-Mmasebotsana/LecturerClaimsPrototypePart2.git 
 
-This repository contains **Part 1** of the CMCS project, which focuses on setting up the **user interface (UI)** and a basic **MVC structure**.  
+Youtube video link: https://youtu.be/BChCqr4xWPk 
+
+
+This repository contains **Part 2** of the CMCS project, which focuses on implementing the functionality of the application/system.
 
 ---
 
 ## 📌 Overview  
-The goal of Part 1 is to present the GUI design and initial page structure for the Contract Monthly Claim System (CMCS).  
-At this stage:  
+The Contract Monthly Claim System is a web-based ASP.NET Core MVC application that allows university lecturers to submit their monthly claims for payment, and for programme coordinators or academic managers to approve or reject these claims.
 
-- **No actual business logic or database connectivity has been implemented.**  
-- **Dummy data** is displayed to simulate what the system will eventually show.  
-- **Buttons and links are for simulation purposes only** — they do not add claims, update data, or perform real actions.  
-- **Popup messages** (or redirects) are used to simulate user interactions.  
+This project (Part 2) focuses on core claim management functionality, including submission, approval, rejection, and supporting document uploads, along with unit testing and error handling to ensure consistent and reliable behavior. 
 
 ---
 
 ## 🖼️ Current Features  
 
-- **Approver Dashboard (Prototype)**  
-  - Displays a list of dummy claims for testing.  
-  - Buttons (e.g., "View") are present but do not load real data or perform database operations.  
-  - This dashboard is still under development — some routes or pages may not load yet.  
+ **Lecturer Functionality**  
+-  View lecturer dashboard with submitted claims.
+- Create new claims with multiple claim lines.
+- Upload supporting documents (PDF, DOCX, XLSX, JPG, PNG).
+- Automatic calculation of total hours and total claim amount.
 
-- **Lecturers Tab (Prototype)**  
-  - Currently displays an error or empty page instead of the intended layout.  
-  - The UI structure is in progress.  
+ **Approver Functionality**  
+- View pending claims in the approver dashboard.
+- Approve or reject claims with comments.
+- Track approval history and rejected claims.
+  
+**Administrator Functionality**  
+- Manage lecturers (add new lecturers).
+- View all lecturers in a list.
 
-- **Static Role Display**  
-  - Uses a simulated `ViewBag.Role` to show which dashboard is being viewed.  
+**System Features**  
+- Supports multiple claim lines per claim.
+- File upload validation (type and size).
+- Robust error handling for invalid data or missing claims.
+- Temporary data messages for success/error feedback.
+  
+---
+
+## Technologies Used
+- ASP.NET Core MVC (C#)
+- Razor Views for front-end UI
+- Moq & xUnit for unit testing
+- In-memory data storage for lecturers, users, and claims (static lists)
+- File uploads stored in wwwroot/uploads
+  
+---
+
+## Setup and Installation
+
+(1) Clone the repository:  
+(2) Open the solution in Visual Studio 2022.
+(3) Restore NuGet packages if necessary.
+(4) Ensure the wwwroot/uploads folder exists for document uploads.
+(5) Build and run the project.  
 
 ---
 
-## 🧪 Development Status  
+## Usage
+1. Lecturer
+- Navigate to /Claim/LecturerDashboard?lecturerId=101 to view claims.
+- Click “Create Claim” to submit a new claim.
+- Add multiple claim lines and upload supporting documents.
 
-| Module / Feature         | Status             | Notes                                                                 |
-|-------------------------|------------------|----------------------------------------------------------------------|
-| Approver Dashboard View | 🚧 In Progress   | Shows dummy claims, buttons simulate actions but do not update data. |
-| Lecturer Tab            | 🚧 In Progress   | Currently not displaying proper layout (still in development).       |
-| Claim Actions           | 🟢 Simulated     | No real claim submission or approval occurs.                         |
-| Database Integration    | ❌ Not Started   | Will be added in later phases of the project.                        |
+2. Approver (Programme Coordinator / Academic Manager)
+- Navigate to /Claim/ApproverDashboard to view pending claims.
+- Approve or reject claims with optional comments.
+
+3. Administrator
+- Navigate to /Claim/LecturersList to view lecturers.
+- Click “Add Lecturer” to create new lecturer records.
+  
+---
+
+## Unit Testing 
+
+- Unit tests are implemented using xUnit and Moq.
+
+- All key functionalities are tested, including:
+(1) Adding lecturers (valid/invalid).
+(2) Submitting claims with multiple lines and documents.
+(3) Approving and rejecting claims.
+(4) Dashboard data retrieval.
+(5) Error handling scenarios (non-existing lecturer/claim, invalid files, missing data).
+
+Run tests from Visual Studio Test Explorer or using command line:
+dotnet test 
 
 ---
 
-## ⚠️ Known Issues  
-
-- **Approver Dashboard cannot be fully accessed yet** (still being built).  
-- **Lecturers tab shows an error** instead of a layout.  
-- Buttons only display placeholder messages — **no data is saved or modified**.  
-
----
-
-## 🔧 Setup & Run  
-
-1. Clone this repository.  
-2. Open the solution in Visual Studio.  
-3. Run the project — it will launch the dummy UI in your browser.  
-4. Navigate to the available dashboard pages to preview the layout and sample data.  
+## Error Handling
+The system includes robust error handling to ensure consistency and reliability:
+- Claims cannot be submitted for non-existing lecturers.
+- Rejection requires a comment.
+- File uploads are validated for size and type.
+- All exceptions are caught and user-friendly messages are displayed using TempData.
 
 ---
 
-## 🗒️ Notes  
-
-This is **not a fully functional application yet** — it is strictly a **prototype for demonstration purposes**.  
-The goal of this part was to build the UI layout and wire up basic navigation, not to implement backend logic.  
-
-Future parts will add:  
-- Real database connectivity (SQL).  
-- Claim submission, approval, and rejection workflows.  
-- Proper lecturer management UI.  
+## Notes
+- Data is stored in in-memory static lists, suitable for demonstration purposes.
+- Uploaded files are stored locally under wwwroot/uploads.
+- Lecturer and user data are pre-populated for testing.
+- Used chatgpt to write the unit tests
 
 ---
 
 ## 👨‍💻 Author  
 
 - **Project Developer:** Mmasebotsana Nkosi   
-- **Deliverable:** Part 1 — GUI / MVC Structure (Prototype)
-
+- **Deliverable:** Part 2 — Contract Monthly Claim System
