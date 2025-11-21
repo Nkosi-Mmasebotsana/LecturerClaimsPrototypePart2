@@ -70,10 +70,8 @@ namespace ContractMonthlyClaimSystem.Controllers
                 claim.TotalAmount = 0;
 
                 // Calculate line items
-                for (int i = 0; i < claim.ClaimLines.Count; i++)
+                foreach (var line in claim.ClaimLines)
                 {
-                    var line = claim.ClaimLines[i];
-                    line.ClaimLineId = i + 1;
                     line.Subtotal = line.HoursWorked * line.RatePerHour;
                     claim.TotalHours += line.HoursWorked;
                     claim.TotalAmount += line.Subtotal;

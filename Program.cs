@@ -18,7 +18,8 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.EnsureCreated(); // This creates DB and tables without migrations
+    db.Database.EnsureCreated(); // UNCOMMENTED - This creates DB and tables without migrations
+    Console.WriteLine("Database and tables created successfully!");
 }
 
 // Rest of your existing pipeline

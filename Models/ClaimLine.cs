@@ -6,6 +6,7 @@ namespace ContractMonthlyClaimSystem.Models
     public class ClaimLine
     {
         [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)] // Add this line
         public int ClaimLineId { get; set; }
 
         [Required]
