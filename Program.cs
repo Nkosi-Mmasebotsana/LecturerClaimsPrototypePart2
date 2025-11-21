@@ -11,8 +11,13 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddControllersWithViews();
+
+// Use the proper AuthService that implements IAuthService
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IClaimService, ClaimService>();
-builder.Services.AddScoped<IAuthService, AuthService>(); // Add this line
+
+builder.Services.AddHttpContextAccessor();
+
 
 // Add session support
 builder.Services.AddSession(options =>
@@ -22,7 +27,6 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-builder.Services.AddHttpContextAccessor(); // Add this for session access
 
 var app = builder.Build();
 
@@ -45,8 +49,10 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
-app.UseSession(); // Add this before authorization
-app.UseMiddleware<AuthMiddleware>(); // Add custom auth middleware
+app.UseSession(); //  session before auth middleware 
+
+// Enable custom auth middleware (ensures session-based auth and RBAC)
+app.UseMiddleware<AuthMiddleware>(); 
 
 app.UseAuthorization();
 

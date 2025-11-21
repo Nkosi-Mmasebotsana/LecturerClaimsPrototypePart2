@@ -1,7 +1,7 @@
-﻿
-using ContractMonthlyClaimSystem.Models;
+﻿using ContractMonthlyClaimSystem.Models;
 using ContractMonthlyClaimSystem.Services;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 
 namespace ContractMonthlyClaimSystem.Controllers
 {
@@ -9,26 +9,28 @@ namespace ContractMonthlyClaimSystem.Controllers
     {
         private readonly IAuthService _authService;
 
+        private readonly Dictionary<string, (string Controller, string Action)> _roleRedirects =
+            new()
+            {
+                { "HR", ("HR", "Dashboard") },
+                { "Programme Coordinator", ("Claim", "ApproverDashboard") },
+                { "Academic Manager", ("Claim", "ApproverDashboard") },
+                { "Lecturer", ("Claim", "LecturerDashboard") }
+            };
+
         public AuthController(IAuthService authService)
         {
             _authService = authService;
         }
 
         [HttpGet]
-        public IActionResult Login()
-        {
-            if (_authService.IsLoggedIn())
-            {
-                return RedirectToDashboard();
-            }
-            return View();
-        }
+        public IActionResult Login() => View();
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Login(string username, string password)
         {
-            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             {
                 TempData["Error"] = "Please enter both username and password.";
                 return View();
@@ -44,10 +46,16 @@ namespace ContractMonthlyClaimSystem.Controllers
             _authService.StoreUserInSession(user);
             TempData["Message"] = $"Welcome back, {user.FullName}!";
 
-            return RedirectToDashboard();
+            if (_roleRedirects.TryGetValue(user.Role, out var target))
+                return RedirectToAction(target.Action, target.Controller);
+
+            _authService.Logout();
+            TempData["Error"] = "Your role is not recognized.";
+            return View();
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult Logout()
         {
             _authService.Logout();
@@ -55,21 +63,6 @@ namespace ContractMonthlyClaimSystem.Controllers
             return RedirectToAction("Login");
         }
 
-        public IActionResult AccessDenied()
-        {
-            return View();
-        }
-
-        private IActionResult RedirectToDashboard()
-        {
-            var user = _authService.GetCurrentUser();
-            return user?.Role switch
-            {
-                "HR" => RedirectToAction("Dashboard", "HR"),
-                "Programme Coordinator" or "Academic Manager" => RedirectToAction("ApproverDashboard", "Claim"),
-                "Lecturer" => RedirectToAction("LecturerDashboard", "Claim"),
-                _ => RedirectToAction("Login", "Auth")
-            };
-        }
+        public IActionResult AccessDenied() => View();
     }
 }

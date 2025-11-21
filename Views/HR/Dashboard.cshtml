@@ -1,0 +1,56 @@
+﻿@{
+    ViewData["Title"] = "HR Dashboard";
+}
+
+<h2>HR Dashboard</h2>
+
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-success">@TempData["Message"]</div>
+}
+
+<p class="text-muted">Welcome, HR. Use the options below to manage the system:</p>
+
+<div class="row g-4 mt-3">
+
+    <div class="col-md-3">
+        <div class="card shadow-sm">
+            <div class="card-body text-center">
+                <h5 class="card-title">Manage Users</h5>
+                <p class="card-text text-secondary">Create, edit, reset passwords, or delete accounts.</p>
+                <a asp-controller="User" asp-action="Index" class="btn btn-primary">Open</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow-sm">
+            <div class="card-body text-center">
+                <h5 class="card-title">Manage Lecturers</h5>
+                <p class="card-text text-secondary">Add or view lecturer records.</p>
+                <a asp-controller="Claim" asp-action="LecturersList" class="btn btn-primary">Open</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow-sm">
+            <div class="card-body text-center">
+                <h5 class="card-title">All Claims</h5>
+                <p class="card-text text-secondary">View all lecturer claims.</p>
+                <a asp-controller="Claim" asp-action="ApproverDashboard" class="btn btn-primary">Open</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow-sm">
+            <div class="card-body text-center">
+                <h5 class="card-title">Reports</h5>
+                <p class="card-text text-secondary">View system-wide reports and financial summaries.</p>
+                <a asp-controller="HR" asp-action="GenerateReports" class="btn btn-primary">Open</a>
+            </div>
+        </div>
+    </div>
+
+</div>

@@ -1,0 +1,159 @@
+﻿@{
+    ViewData["Title"] = "HR Reports";
+
+    var claimsByLecturer = ViewBag.ClaimsByLecturer as IEnumerable<dynamic>;
+    var amountPerMonth = ViewBag.AmountPerMonth as IEnumerable<dynamic>;
+    var claimsByStatus = ViewBag.ClaimsByStatus as IEnumerable<dynamic>;
+    var top5Claims = ViewBag.Top5Claims as IEnumerable<ContractMonthlyClaimSystem.Models.Claim>;
+}
+
+<h2>System Reports</h2>
+
+
+<p class="text-muted">Below are key performance and financial summaries generated from lecturer claims.</p>
+
+<hr />
+
+<!-- ========================================================= -->
+<!-- Claims By Lecturer -->
+<!-- ========================================================= -->
+<h4>1. Claims by Lecturer</h4>
+
+@if (claimsByLecturer == null || !claimsByLecturer.Any())
+{
+    <p class="text-secondary">No lecturer claim data available.</p>
+}
+else
+{
+    <div class="table-responsive mt-2 mb-4">
+        <table class="table table-bordered table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>Lecturer</th>
+                    <th>Total Claims</th>
+                    <th>Total Hours</th>
+                    <th>Total Amount (R)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in claimsByLecturer)
+                {
+                    <tr>
+                        <td>@item.LecturerName</td>
+                        <td>@item.ClaimCount</td>
+                        <td>@item.TotalHours</td>
+                        <td>R @item.TotalAmount.ToString("N2")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<!-- ========================================================= -->
+<!-- Amount Per Month -->
+<!-- ========================================================= -->
+<h4>2. Total Amount Per Month</h4>
+
+@if (amountPerMonth == null || !amountPerMonth.Any())
+{
+    <p class="text-secondary">No monthly payment data available.</p>
+}
+else
+{
+    <div class="table-responsive mt-2 mb-4">
+        <table class="table table-bordered table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>Month</th>
+                    <th>Number of Claims</th>
+                    <th>Total Amount (R)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in amountPerMonth)
+                {
+                    <tr>
+                        <td>@item.Month</td>
+                        <td>@item.Count</td>
+                        <td>R @item.TotalAmount.ToString("N2")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<!-- ========================================================= -->
+<!-- Claims By Status -->
+<!-- ========================================================= -->
+<h4>3. Claims by Status</h4>
+
+@if (claimsByStatus == null || !claimsByStatus.Any())
+{
+    <p class="text-secondary">No claim status summary available.</p>
+}
+else
+{
+    <div class="table-responsive mt-2 mb-4">
+        <table class="table table-bordered table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>Status</th>
+                    <th>Number of Claims</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in claimsByStatus)
+                {
+                    <tr>
+                        <td>@item.Status</td>
+                        <td>@item.Count</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<!-- ========================================================= -->
+<!-- Top 5 Highest Claim Totals -->
+<!-- ========================================================= -->
+<h4>4. Top 5 Highest Claims</h4>
+
+@if (top5Claims == null || !top5Claims.Any())
+{
+    <p class="text-secondary">No claim amount data available.</p>
+}
+else
+{
+    <div class="table-responsive mt-2 mb-4">
+        <table class="table table-bordered table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>Claim ID</th>
+                    <th>Lecturer</th>
+                    <th>Total Amount (R)</th>
+                    <th>Total Hours</th>
+                    <th>Submitted</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var claim in top5Claims)
+                {
+                    <tr>
+                        <td>@claim.ClaimId</td>
+                        <td>@claim.Lecturer?.FullName</td>
+                        <td>R @claim.TotalAmount.ToString("N2")</td>
+                        <td>@claim.TotalHours</td>
+                        <td>@claim.SubmittedAt.ToString("yyyy-MM-dd")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<hr />
+
+<a asp-controller="HR" asp-action="Dashboard" class="btn btn-secondary">Back to Dashboard</a>

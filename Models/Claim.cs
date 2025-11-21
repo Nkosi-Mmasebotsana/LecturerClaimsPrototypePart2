@@ -26,7 +26,7 @@ namespace ContractMonthlyClaimSystem.Models
         [Required]
         public string Status { get; set; } = "Draft";
 
-        public DateTime SubmittedAt { get; set; }
+        public DateTime SubmittedAt { get; set; } = DateTime.Now;
 
         // Approval fields
         public int? ApprovedBy { get; set; }

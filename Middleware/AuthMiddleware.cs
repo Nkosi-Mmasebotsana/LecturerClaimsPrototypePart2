@@ -1,5 +1,4 @@
-﻿
-using ContractMonthlyClaimSystem.Services;
+﻿using ContractMonthlyClaimSystem.Services;
 
 namespace ContractMonthlyClaimSystem.Middleware
 {
@@ -14,13 +13,16 @@ namespace ContractMonthlyClaimSystem.Middleware
 
         public async Task InvokeAsync(HttpContext context, IAuthService authService)
         {
-            // Skip auth for login page and static files
-            var path = context.Request.Path;
-            if (path.StartsWithSegments("/Auth/Login") ||
-                path.StartsWithSegments("/lib") ||
-                path.StartsWithSegments("/css") ||
-                path.StartsWithSegments("/js") ||
-                path.StartsWithSegments("/uploads"))
+            var path = context.Request.Path.Value?.ToLower() ?? "";
+
+            // Skip auth for login/logout/accessdenied pages and static files
+            if (path.StartsWith("/auth/login") ||
+                path.StartsWith("/auth/logout") ||
+                path.StartsWith("/auth/accessdenied") ||
+                path.StartsWith("/lib") ||
+                path.StartsWith("/css") ||
+                path.StartsWith("/js") ||
+                path.StartsWith("/uploads"))
             {
                 await _next(context);
                 return;
@@ -29,37 +31,34 @@ namespace ContractMonthlyClaimSystem.Middleware
             // Check if user is authenticated
             if (!authService.IsLoggedIn())
             {
-                context.Response.Redirect("/Auth/Login");
+                context.Response.Redirect("/auth/login");
                 return;
             }
 
             // Role-based access control
             var user = authService.GetCurrentUser();
-            if (user != null)
+            if (user != null && !CanAccess(path, user.Role))
             {
-                // Define accessible routes for each role
-                var accessible = CanAccess(path, user.Role);
-                if (!accessible)
-                {
-                    context.Response.Redirect("/Auth/AccessDenied");
-                    return;
-                }
+                context.Response.Redirect("/auth/accessdenied");
+                return;
             }
 
             await _next(context);
         }
 
-        private bool CanAccess(PathString path, string role)
+        private bool CanAccess(string path, string role)
         {
+            // Define routes each role can access
             var accessibleRoutes = new Dictionary<string, List<string>>
             {
-                ["HR"] = new List<string> { "/HR/", "/Claim/", "/Home/", "/Auth/" },
-                ["Programme Coordinator"] = new List<string> { "/Claim/ApproverDashboard", "/Claim/Details", "/Home/", "/Auth/" },
-                ["Academic Manager"] = new List<string> { "/Claim/ApproverDashboard", "/Claim/Details", "/Home/", "/Auth/" },
-                ["Lecturer"] = new List<string> { "/Claim/LecturerDashboard", "/Claim/Create", "/Claim/Submit", "/Claim/MyClaims", "/Home/", "/Auth/" }
+                ["hr"] = new List<string> { "/hr", "/claim", "/auth" },
+                ["programme coordinator"] = new List<string> { "/claim", "/auth" },
+                ["academic manager"] = new List<string> { "/claim", "/auth" },
+                ["lecturer"] = new List<string> { "/claim", "/auth" }
             };
 
-            return accessibleRoutes[role].Any(route => path.StartsWithSegments(route));
+            return accessibleRoutes.TryGetValue(role.ToLower(), out var routes) &&
+                   routes.Any(route => path.StartsWith(route));
         }
     }
 }

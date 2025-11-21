@@ -1,21 +1,10 @@
-﻿
-using ContractMonthlyClaimSystem.Models;
+﻿using ContractMonthlyClaimSystem.Models;
 using ContractMonthlyClaimSystem.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace ContractMonthlyClaimSystem.Services
 {
-    public interface IAuthService
-    {
-        User? Authenticate(string username, string password);
-        void StoreUserInSession(User user);
-        User? GetCurrentUser();
-        bool IsLoggedIn();
-        void Logout();
-        bool HasRole(string role);
-    }
-
-    public class AuthService : IAuthService
+    public class AuthService : IAuthService  // Make sure it implements IAuthService
     {
         private readonly AppDbContext _context;
         private readonly IHttpContextAccessor _httpContextAccessor;
@@ -52,9 +41,14 @@ namespace ContractMonthlyClaimSystem.Services
             if (session == null) return null;
 
             var userId = session.GetInt32("UserId");
-            if (userId == null) return null;
+            var username = session.GetString("Username");
 
-            return _context.Users.Find(userId);
+            if (userId == null || string.IsNullOrEmpty(username)) 
+                return null;
+
+            // Return user from database; if missing, treat as logged out
+            var user = _context.Users.FirstOrDefault(u => u.UserId == userId && u.Username == username);
+            return user;
         }
 
         public bool IsLoggedIn()

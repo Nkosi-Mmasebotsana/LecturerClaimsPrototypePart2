@@ -1,0 +1,42 @@
+﻿@model ContractMonthlyClaimSystem.Models.User
+
+@{
+    ViewData["Title"] = "Edit User";
+}
+
+<h2>Edit User</h2>
+
+<form asp-action="Edit" method="post" class="mt-3">
+    @Html.AntiForgeryToken()
+
+    <input type="hidden" asp-for="UserId" />
+
+    <div class="mb-3">
+        <label asp-for="FullName" class="form-label"></label>
+        <input asp-for="FullName" class="form-control" required />
+        <span asp-validation-for="FullName" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Email" class="form-label"></label>
+        <input asp-for="Email" class="form-control" required />
+        <span asp-validation-for="Email" class="text-danger"></span>
+    </div>
+
+    <!-- Password not displayed: use ResetPassword instead -->
+
+    <div class="mb-3">
+        <label asp-for="Role" class="form-label"></label>
+        <select asp-for="Role" class="form-select" required>
+            <option value="">Select role</option>
+            <option selected="@(Model.Role == "HR")">HR</option>
+            <option selected="@(Model.Role == "Programme Coordinator")">Programme Coordinator</option>
+            <option selected="@(Model.Role == "Academic Manager")">Academic Manager</option>
+            <option selected="@(Model.Role == "Lecturer")">Lecturer</option>
+        </select>
+        <span asp-validation-for="Role" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save Changes</button>
+    <a asp-action="Index" class="btn btn-secondary ms-2">Back</a>
+</form>
