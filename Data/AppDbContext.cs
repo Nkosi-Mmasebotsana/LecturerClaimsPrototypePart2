@@ -42,9 +42,43 @@ namespace ContractMonthlyClaimSystem.Data
             );
 
             modelBuilder.Entity<User>().HasData(
-                new User { UserId = 1, FullName = "Kholo Nkosi", Role = "Programme Coordinator" },
-                new User { UserId = 2, FullName = "Siya Sepuru", Role = "Academic Manager" }
-            );
+                new User
+                {
+                    UserId = 1,
+                    FullName = "Kholo Nkosi",
+                    Email = "kholo@hr.com",
+                    Username = "kholo.hr",
+                    Password = "hr123", // In production, hash passwords!
+                    Role = "HR"
+                },
+                new User
+                {
+                    UserId = 2,
+                    FullName = "Siya Sepuru",
+                    Email = "siya@coordinator.com",
+                    Username = "siya.coord",
+                    Password = "coord123",
+                    Role = "Programme Coordinator"
+                },
+                new User
+                {
+                    UserId = 3,
+                    FullName = "Lerato Mbeki",
+                    Email = "lerato@manager.com",
+                    Username = "lerato.manager",
+                    Password = "manager123",
+                    Role = "Academic Manager"
+                },
+                new User
+                {
+                    UserId = 4,
+                    FullName = "Dr. Tumi N.",
+                    Email = "tumi@gmail.com",
+                    Username = "tumi.lecturer",
+                    Password = "lecturer123",
+                    Role = "Lecturer"
+                }
+                );
         }
     }
 }
